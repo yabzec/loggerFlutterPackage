@@ -56,3 +56,6 @@ logger.warn('Your stuff');
 logger.error('Your stuff');
 logger.critical('Your stuff');
 ```
+
+## Tips
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/I3I61V3CIV)
