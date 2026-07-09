@@ -17,45 +17,45 @@ enum LogLevel {
 }
 
 class Logger {
-  static const accountId = String.fromEnvironment('CLOUDFLARE_ACCOUNT_ID');
-  static const databaseId = String.fromEnvironment(
+  static const _accountId = String.fromEnvironment('CLOUDFLARE_ACCOUNT_ID');
+  static const _databaseId = String.fromEnvironment(
     'CLOUDFLARE_LOGGER_DATABASE_ID',
   );
-  static const apiToken = String.fromEnvironment('CLOUDFLARE_API_TOKEN');
+  static const _apiToken = String.fromEnvironment('CLOUDFLARE_API_TOKEN');
   late final D1Config _config;
   late final D1Client _client;
-  late final D1Database database;
+  late final D1Database _database;
   final String _table = 'log';
   final String _subject;
   late final String _title;
 
   Logger(this._subject, this._title) {
     _config = D1Config(
-      accountId: accountId,
-      databaseId: databaseId,
-      apiToken: apiToken,
+      accountId: _accountId,
+      databaseId: _databaseId,
+      apiToken: _apiToken,
     );
     _client = D1Client(config: _config);
-    database = D1Database(_client);
+    _database = D1Database(_client);
   }
 
-  Future<void> info(String content) async {
-    return _log(LogLevel.info, content);
+  Future<void> info(String content, [Object? e, StackTrace? s]) async {
+    return _log(LogLevel.info, content, e, s);
   }
 
-  Future<void> warn(String content) async {
-    return _log(LogLevel.warn, content);
+  Future<void> warn(String content, [Object? e, StackTrace? s]) async {
+    return _log(LogLevel.warn, content, e, s);
   }
 
-  Future<void> error(String content) async {
-    return _log(LogLevel.error, content);
+  Future<void> error(String content, [Object? e, StackTrace? s]) async {
+    return _log(LogLevel.error, content, e, s);
   }
 
-  Future<void> critical(String content) async {
-    return _log(LogLevel.critical, content);
+  Future<void> critical(String content, [Object? e, StackTrace? s]) async {
+    return _log(LogLevel.critical, content, e, s);
   }
 
-  Future<void> _log(LogLevel level, String content) async {
+  Future<void> _log(LogLevel level, String content, [Object? e, StackTrace? s]) async {
     log(content);
 
     if (kDebugMode) {
@@ -77,14 +77,14 @@ class Logger {
     }
 
     try {
-      await database.insert(_table, {
+      await _database.insert(_table, {
         'date': new DateTime.now().millisecondsSinceEpoch,
         'device': device,
         'os': os,
         'subject': _subject,
         'level': level.levelNumber,
         'title': _title,
-        'content': content,
+        'content': '$content\n${e.toString()}\n${s.toString()}',
       });
     } catch (e) {
       log(e.toString());
