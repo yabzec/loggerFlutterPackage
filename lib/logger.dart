@@ -1,9 +1,10 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:cloudflare_d1/cloudflare_d1.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 enum LogLevel {
   info(0),
@@ -17,26 +18,31 @@ enum LogLevel {
 }
 
 class Logger {
-  static const _accountId = String.fromEnvironment('CLOUDFLARE_ACCOUNT_ID');
-  static const _databaseId = String.fromEnvironment(
-    'CLOUDFLARE_LOGGER_DATABASE_ID',
-  );
-  static const _apiToken = String.fromEnvironment('CLOUDFLARE_API_TOKEN');
-  late final D1Config _config;
-  late final D1Client _client;
-  late final D1Database _database;
-  final String _table = 'log';
-  final String _subject;
-  late final String _title;
+  static const String defaultBaseUrl = 'https://logger.yabzec.uk';
 
-  Logger(this._subject, this._title) {
-    _config = D1Config(
-      accountId: _accountId,
-      databaseId: _databaseId,
-      apiToken: _apiToken,
-    );
-    _client = D1Client(config: _config);
-    _database = D1Database(_client);
+  final String _subject;
+  final String _title;
+  final String _clientId;
+  final String _clientSecret;
+  final Uri _endpoint;
+  final http.Client _httpClient;
+
+  Logger(
+    this._subject,
+    this._title, {
+    required String clientId,
+    required String clientSecret,
+    String baseUrl = defaultBaseUrl,
+    http.Client? httpClient,
+  })  : _clientId = clientId,
+        _clientSecret = clientSecret,
+        _endpoint = Uri.parse(baseUrl).resolve('/api/insert'),
+        _httpClient = httpClient ?? http.Client();
+
+  /// Releases the underlying [http.Client]. Only call this when the logger owns
+  /// the client, that is when no `httpClient` was passed to the constructor.
+  void dispose() {
+    _httpClient.close();
   }
 
   Future<void> info(String content, [Object? e, StackTrace? s]) async {
@@ -55,7 +61,12 @@ class Logger {
     return _log(LogLevel.critical, content, e, s);
   }
 
-  Future<void> _log(LogLevel level, String content, [Object? e, StackTrace? s]) async {
+  Future<void> _log(
+    LogLevel level,
+    String content, [
+    Object? e,
+    StackTrace? s,
+  ]) async {
     log(content);
 
     if (kDebugMode) {
@@ -77,17 +88,43 @@ class Logger {
     }
 
     try {
-      await _database.insert(_table, {
-        'date': new DateTime.now().millisecondsSinceEpoch,
-        'device': device,
-        'os': os,
-        'subject': _subject,
-        'level': level.levelNumber,
-        'title': _title,
-        'content': '$content\n${e.toString()}\n${s.toString()}',
-      });
+      final response = await _httpClient.put(
+        _endpoint,
+        headers: {
+          'Content-Type': 'application/json',
+          'CF-Access-Client-Id': _clientId,
+          'CF-Access-Client-Secret': _clientSecret,
+        },
+        body: jsonEncode({
+          'date': DateTime.now().millisecondsSinceEpoch,
+          'device': device,
+          'os': os,
+          'subject': _subject,
+          'level': level.levelNumber,
+          'title': _title,
+          'content': _buildContent(content, e, s),
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        log('Logger request failed: ${response.statusCode} ${response.body}');
+      }
     } catch (e) {
       log(e.toString());
     }
+  }
+
+  String _buildContent(String content, Object? e, StackTrace? s) {
+    final StringBuffer buffer = StringBuffer(content);
+
+    if (e != null) {
+      buffer.write('\n$e');
+    }
+
+    if (s != null) {
+      buffer.write('\n$s');
+    }
+
+    return buffer.toString();
   }
 }
