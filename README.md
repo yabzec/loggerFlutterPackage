@@ -53,7 +53,6 @@ Create an instance
 ```dart
 final Logger logger = Logger(
   'my_subject',
-  'my_title',
   clientId: const String.fromEnvironment('LOGGER_CLIENT_ID'),
   clientSecret: const String.fromEnvironment('LOGGER_CLIENT_SECRET'),
 );
@@ -73,7 +72,6 @@ Point `baseUrl` elsewhere to log against a local `wrangler dev` instance. The
 ```dart
 final Logger logger = Logger(
   'my_subject',
-  'my_title',
   clientId: 'unused',
   clientSecret: 'unused',
   baseUrl: 'http://127.0.0.1:8787',
@@ -83,10 +81,10 @@ final Logger logger = Logger(
 Log your stuff
 
 ```dart
-logger.info('Your stuff');
-logger.warn('Your stuff');
-logger.error('Your stuff');
-logger.critical('Your stuff');
+logger.info('Title', 'Your stuff');
+logger.warn('Title', 'Your stuff');
+logger.error('Title', 'Your stuff');
+logger.critical('Title', 'Your stuff');
 ```
 
 Each method also takes an optional error and stack trace, appended to the
@@ -96,7 +94,7 @@ content only when present:
 try {
   ...
 } catch (e, s) {
-  logger.error('Something broke', e, s);
+  logger.error('Title', 'Something broke', e, s);
 }
 ```
 

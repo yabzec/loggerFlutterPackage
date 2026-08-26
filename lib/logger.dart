@@ -21,15 +21,13 @@ class Logger {
   static const String defaultBaseUrl = 'https://logger.yabzec.uk';
 
   final String _subject;
-  final String _title;
   final String _clientId;
   final String _clientSecret;
   final Uri _endpoint;
   final http.Client _httpClient;
 
   Logger(
-    this._subject,
-    this._title, {
+    this._subject, {
     required String clientId,
     required String clientSecret,
     String baseUrl = defaultBaseUrl,
@@ -45,24 +43,25 @@ class Logger {
     _httpClient.close();
   }
 
-  Future<void> info(String content, [Object? e, StackTrace? s]) async {
-    return _log(LogLevel.info, content, e, s);
+  Future<void> info(String title, String content, [Object? e, StackTrace? s]) async {
+    return _log(LogLevel.info, title, content, e, s);
   }
 
-  Future<void> warn(String content, [Object? e, StackTrace? s]) async {
-    return _log(LogLevel.warn, content, e, s);
+  Future<void> warn(String title, String content, [Object? e, StackTrace? s]) async {
+    return _log(LogLevel.warn, title, content, e, s);
   }
 
-  Future<void> error(String content, [Object? e, StackTrace? s]) async {
-    return _log(LogLevel.error, content, e, s);
+  Future<void> error(String title, String content, [Object? e, StackTrace? s]) async {
+    return _log(LogLevel.error, title, content, e, s);
   }
 
-  Future<void> critical(String content, [Object? e, StackTrace? s]) async {
-    return _log(LogLevel.critical, content, e, s);
+  Future<void> critical(String title, String content, [Object? e, StackTrace? s]) async {
+    return _log(LogLevel.critical, title, content, e, s);
   }
 
   Future<void> _log(
     LogLevel level,
+    String title,
     String content, [
     Object? e,
     StackTrace? s,
@@ -101,7 +100,7 @@ class Logger {
           'os': os,
           'subject': _subject,
           'level': level.levelNumber,
-          'title': _title,
+          'title': title,
           'content': _buildContent(content, e, s),
         }),
       );
