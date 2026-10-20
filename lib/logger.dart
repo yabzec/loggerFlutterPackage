@@ -82,7 +82,7 @@ class Logger {
       os = "${info.systemName} - ${info.systemVersion}";
     } else {
       AndroidDeviceInfo info = await deviceInfo.androidInfo;
-      device = "${info.manufacturer} - ${info.name}";
+      device = "${info.manufacturer} - ${info.model}";
       os = "ANDROID - ${info.version.release}";
     }
 
